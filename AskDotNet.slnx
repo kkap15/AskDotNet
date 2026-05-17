@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AskDotNet.Core/AskDotNet.Core.csproj" />
+    <Project Path="src/AskDotNet.Ingest/AskDotNet.Ingest.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AskDotNet.Ingest.Tests/AskDotNet.Ingest.Tests.csproj" />
+  </Folder>
+</Solution>
