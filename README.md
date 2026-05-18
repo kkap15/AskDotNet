@@ -17,15 +17,15 @@ A full-stack Q&A assistant over Microsoft Learn documentation. A .NET backend cr
 
 | Component | File | Responsibility |
 |---|---|---|
-| `Crawler` | `src/AskDotNet.Ingest/Crawler.cs` | HTTP fetching with Polly retries (3×) and 500 ms delay between requests |
-| `ContentExtractor` | `src/AskDotNet.Ingest/ContentExtractor.cs` | AngleSharp + ReverseMarkdown — removes noise, extracts title and structured content |
-| `Chunker` | `src/AskDotNet.Ingest/Chunker.cs` | Splits Markdown by H2/H3, enforces 100–800 token limits using cl100k_base tokenizer |
-| `EmbedWorker` | `src/AskDotnet.Embed/EmbedWorker.cs` | Orchestrates embed pipeline; reads JSON, deduplicates by ID, batches embedding calls |
-| `EmbeddingService` | `src/AskDotnet.Embed/Service/EmbeddingService.cs` | Azure OpenAI client; generates float[] vectors in batch |
-| `DatabaseService` | `src/AskDotnet.Embed/Service/DatabaseService.cs` | Npgsql + pgvector; idempotent chunk + embedding insertion |
-| `RagService` | `src/AskDotNet.Rag/Service/RagService.cs` | Embeds query, retrieves top-10 chunks by cosine similarity, generates answer via gpt-4o-mini |
-| `RagWorker` | `src/AskDotNet.RagCli/RagWorker.cs` | Interactive CLI loop; formats answers with source citations and similarity scores |
-| Web API | `src/AskDotNet.Web/Program.cs` | ASP.NET Core minimal API; `POST /api/chat` streams tokens via SSE with rate limiting (10 req/s) |
+| `Crawler` | `backend/AskDotNet.Ingest/Crawler.cs` | HTTP fetching with Polly retries (3×) and 500 ms delay between requests |
+| `ContentExtractor` | `backend/AskDotNet.Ingest/ContentExtractor.cs` | AngleSharp + ReverseMarkdown — removes noise, extracts title and structured content |
+| `Chunker` | `backend/AskDotNet.Ingest/Chunker.cs` | Splits Markdown by H2/H3, enforces 100–800 token limits using cl100k_base tokenizer |
+| `EmbedWorker` | `backend/AskDotnet.Embed/EmbedWorker.cs` | Orchestrates embed pipeline; reads JSON, deduplicates by ID, batches embedding calls |
+| `EmbeddingService` | `backend/AskDotnet.Embed/Service/EmbeddingService.cs` | Azure OpenAI client; generates float[] vectors in batch |
+| `DatabaseService` | `backend/AskDotnet.Embed/Service/DatabaseService.cs` | Npgsql + pgvector; idempotent chunk + embedding insertion |
+| `RagService` | `backend/AskDotNet.Rag/Service/RagService.cs` | Embeds query, retrieves top-10 chunks by cosine similarity, generates answer via gpt-4o-mini |
+| `RagWorker` | `backend/AskDotNet.RagCli/RagWorker.cs` | Interactive CLI loop; formats answers with source citations and similarity scores |
+| Web API | `backend/AskDotNet.Web/Program.cs` | ASP.NET Core minimal API; `POST /api/chat` streams tokens via SSE with rate limiting (10 req/s) |
 | React frontend | `frontend/src/App.tsx` | Auth0-gated chat UI; parses SSE stream, renders markdown, displays source citations |
 
 ## Prerequisites
@@ -60,15 +60,15 @@ git clone <repo-url>
 cd AskDotNet
 
 # Phase 1: Ingest — crawl, extract, chunk
-dotnet run --project src/AskDotNet.Ingest
+dotnet run --project backend/AskDotNet.Ingest
 # → writes data/output.json
 
 # Phase 2: Embed — generate and store vectors
-dotnet run --project src/AskDotnet.Embed
+dotnet run --project backend/AskDotnet.Embed
 # → reads data/output.json, inserts chunks + embeddings into PostgreSQL
 
 # Phase 3: Web API
-dotnet run --project src/AskDotNet.Web
+dotnet run --project backend/AskDotNet.Web
 # → POST http://localhost:5253/api/chat  (streaming SSE)
 
 # Phase 4: React frontend
@@ -76,17 +76,17 @@ cd frontend && npm install && npm run dev
 # → http://localhost:5173
 
 # Alternative: Interactive CLI (no frontend required)
-dotnet run --project src/AskDotNet.RagCli
+dotnet run --project backend/AskDotNet.RagCli
 # → prompts for questions, prints answers with source citations
 ```
 
 ## Configuration
 
-**Ingest** (`src/AskDotNet.Ingest/Program.cs` and `Chunker.cs`):
+**Ingest** (`backend/AskDotNet.Ingest/Program.cs` and `Chunker.cs`):
 - **Seed URLs** — edit the list in `Program.cs`
 - **Token limits** — `MinTokens` / `MaxTokens` in `Chunker.cs` (defaults: 100 / 800)
 
-**Embed** — set user secrets from the `src/AskDotnet.Embed` directory:
+**Embed** — set user secrets from the `backend/AskDotnet.Embed` directory:
 
 ```bash
 dotnet user-secrets set "AzureOpenAI:Endpoint" "https://<your-resource>.openai.azure.com/"
@@ -94,7 +94,7 @@ dotnet user-secrets set "AzureOpenAI:ApiKey" "<your-key>"
 dotnet user-secrets set "ConnectionStrings:Postgres" "Host=localhost;Database=askdotnet;Username=...;Password=..."
 ```
 
-Additional settings in `src/AskDotnet.Embed/appsettings.json`:
+Additional settings in `backend/AskDotnet.Embed/appsettings.json`:
 
 | Key | Default | Description |
 |---|---|---|
@@ -102,7 +102,7 @@ Additional settings in `src/AskDotnet.Embed/appsettings.json`:
 | `Ingest:ChunksPath` | `../../../../../data/output.json` | Path to ingest output |
 | `Ingest:BatchSize` | `100` | Chunks per embedding API call |
 
-**Web API** — set user secrets from the `src/AskDotNet.Web` directory:
+**Web API** — set user secrets from the `backend/AskDotNet.Web` directory:
 
 ```bash
 dotnet user-secrets set "AzureOpenAI:Endpoint" "https://<your-resource>.openai.azure.com/"
@@ -116,14 +116,14 @@ dotnet user-secrets set "Auth0:Domain" "<your-auth0-tenant>.us.auth0.com"
 dotnet user-secrets set "Auth0:Audience" "https://<your-api-identifier>"
 ```
 
-Additional settings in `src/AskDotNet.Web/appsettings.json`:
+Additional settings in `backend/AskDotNet.Web/appsettings.json`:
 
 | Key | Default | Description |
 |---|---|---|
 | `AzureOpenAI:DeploymentName` | `text-embedding-3-small` | Embedding model deployment name |
 | `AzureOpenAI:ChatDeploymentName` | `gpt-4o-mini` | Answer generation model deployment name |
 
-**RAG CLI** — set user secrets from the `src/AskDotNet.RagCli` directory:
+**RAG CLI** — set user secrets from the `backend/AskDotNet.RagCli` directory:
 
 ```bash
 dotnet user-secrets set "AzureOpenAI:Endpoint" "https://<your-resource>.openai.azure.com/"
@@ -131,7 +131,7 @@ dotnet user-secrets set "AzureOpenAI:ApiKey" "<your-key>"
 dotnet user-secrets set "Postgres:ConnectionString" "Host=localhost;Database=askdotnet;Username=...;Password=..."
 ```
 
-Additional settings in `src/AskDotNet.RagCli/appsettings.json`:
+Additional settings in `backend/AskDotNet.RagCli/appsettings.json`:
 
 | Key | Default | Description |
 |---|---|---|
