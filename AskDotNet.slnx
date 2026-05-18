@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/AskDotNet.Core/AskDotNet.Core.csproj" />
+    <Project Path="src/AskDotNet.Embed/AskDotNet.Embed.csproj" />
     <Project Path="src/AskDotNet.Ingest/AskDotNet.Ingest.csproj" />
   </Folder>
   <Folder Name="/tests/">

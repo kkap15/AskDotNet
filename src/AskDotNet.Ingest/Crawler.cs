@@ -41,7 +41,6 @@ public sealed class Crawler(HttpClient client, ContentExtractor extractor, ILogg
             return null;
         }
         var html = await response.Content.ReadAsStringAsync(cancellationToken);
-        await File.WriteAllTextAsync("content.html", html, cancellationToken);
         return await extractor.ExtractAsync(url, html);
     }
 }

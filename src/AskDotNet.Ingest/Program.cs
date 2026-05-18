@@ -42,7 +42,12 @@ var chunker = host.Services.GetRequiredService<Chunker>();
 string[] seedUrls =
 [
     "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/program-structure/",
-    "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/structs"
+    "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/generics",
+    "https://learn.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-14",
+    "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/nullable-value-types",
+    "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/enum",
+    "https://learn.microsoft.com/en-us/dotnet/csharp/linq/get-started/type-relationships-in-linq-query-operations",
+    "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/structs",
 ];
 
 var pages = await crawler.CrawlAsync(seedUrls, cts.Token);
