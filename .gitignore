@@ -1,3 +1,4 @@
 data/chunks.json
 bin/
 obj/
+frontend/node_modules

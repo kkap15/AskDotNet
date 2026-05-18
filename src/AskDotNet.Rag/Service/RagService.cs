@@ -53,11 +53,7 @@ public sealed class RagService : IRagService, IAsyncDisposable
     public async IAsyncEnumerable<string> AskStreamingAsync(string question,
         Func<IReadOnlyList<ChunkReference>, Task> onSourceReady, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var questionEmbeddings = await _generator.GenerateAsync(new[] { question }, cancellationToken: cancellationToken);
-        var vector = new Vector(questionEmbeddings[0].Vector.ToArray());
-        var chunks = (await _dbHelper.RetrieveChunksAsync(vector, 10, cancellationToken))
-            .Where(c => c.Similarity > 0.5)
-            .ToList();
+        var (chunks, sources) = await PrepareAsync(question, cancellationToken);
 
         if (chunks.Count is 0)
         {
@@ -66,9 +62,6 @@ public sealed class RagService : IRagService, IAsyncDisposable
             yield break;
         }
         
-        var sources = chunks
-            .Select(c => new ChunkReference(c.SourceUrl, c.SourceTitle, c.SectionHeading, c.Similarity))
-            .ToList();
         await onSourceReady(sources);
         
         var context = RagHelper.BuildContext(chunks);
@@ -83,6 +76,21 @@ public sealed class RagService : IRagService, IAsyncDisposable
                 yield return text;
             }
         }
+    }
+
+    private async Task<(List<(string SourceUrl, string SourceTitle, string SectionHeading, string Content, 
+            double Similarity)> Chunks, List<ChunkReference> Sources)> PrepareAsync(string question, CancellationToken ct)
+    {
+        var questionEmbeddings = await _generator.GenerateAsync(new List<string> { question });
+        var vector = new Vector(questionEmbeddings[0].Vector.ToArray());
+        var chunks = (await _dbHelper.RetrieveChunksAsync(vector, 10, ct))
+            .Where(c => c.Similarity > 0.5)
+            .ToList();
+        var sources = chunks
+            .Select(c => new ChunkReference(c.SourceUrl, c.SourceTitle, c.SectionHeading, c.Similarity))
+            .ToList();
+        
+        return (chunks, sources);
     }
     
     public async ValueTask DisposeAsync() => await _dbHelper.DisposeAsync();

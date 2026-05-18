@@ -6,6 +6,7 @@ using AskDotNet.Rag.Interface;
 using AskDotNet.Rag.Service;
 using Azure.AI.OpenAI;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.AI;
 
 namespace AskDotNet.Web;
@@ -58,35 +59,41 @@ public class Program
         });
         builder.Services.AddCors(options =>
         {
-            options.AddDefaultPolicy(policy =>
-            {
-                policy.WithOrigins("http://localhost:7038")
-                    .AllowAnyMethod()
-                    .AllowAnyHeader()
-                    .AllowCredentials();
-            });
+            options.AddPolicy("frontend", policy =>
+                {
+                    policy.WithOrigins("http://localhost:5173")
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials();
+                }
+            );
+        });
+        builder.Services.ConfigureHttpJsonOptions(options =>
+        {
+            options.SerializerOptions.PropertyNameCaseInsensitive = true;
         });
 
         // Add services to the container.
         builder.Services.AddAuthorization();
-
+        builder.Services.AddHttpContextAccessor();
         var app = builder.Build();
 
-        app.UseHttpsRedirection();
-        app.UseCors();
+        //app.UseHttpsRedirection();
+        app.UseCors("frontend");
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseRateLimiter();
 
         app.MapPost("/api/chat",
-                async (HttpContext context, IRagService rag, ChatRequest request, CancellationToken ct) =>
+                async (IRagService rag, [FromBody] ChatRequest request, IHttpContextAccessor accessor, CancellationToken ct) =>
                 {
+                    var context = accessor.HttpContext!;
+                    
                     context.Response.ContentType = "text/event-stream";
                     context.Response.Headers.CacheControl = "no-cache";
                     context.Response.Headers.Connection = "keep-alive";
 
                     IReadOnlyList<ChunkReference> sources = [];
-
                     await foreach (var token in rag.AskStreamingAsync(
                                        request.Question,
                                        s =>
@@ -96,17 +103,16 @@ public class Program
                                        },
                                        ct))
                     {
-                        await context.Response.WriteAsync($"data: {token}\n\n", ct);
-                        await context.Response.Body.FlushAsync(ct);
+                        await context.Response.WriteAsync($"data: {token}\n\n");
+                        await context.Response.Body.FlushAsync();
                     }
 
                     var sourcesJson = JsonSerializer.Serialize(sources);
-                    await context.Response.WriteAsync($"event: sources\ndata: {sourcesJson}\n\n", ct);
-                    await context.Response.Body.FlushAsync(ct);
+                    await context.Response.WriteAsync($"event: sources\ndata: {sourcesJson}\n\n");
+                    await context.Response.Body.FlushAsync();
                 })
-            //.RequireAuthorization()
+            .RequireAuthorization()
             .RequireRateLimiting("chat");
-        
         app.Run();
     }
 }
