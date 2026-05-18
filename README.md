@@ -1,6 +1,6 @@
 # AskDotNet
 
-A .NET pipeline for building a Q&A assistant over Microsoft Learn documentation. Crawls pages, extracts clean content, produces token-aware chunks, stores vector embeddings in PostgreSQL, and answers natural-language questions via a streaming REST API or interactive CLI — with source citations powered by Azure OpenAI.
+A full-stack Q&A assistant over Microsoft Learn documentation. A .NET backend crawls pages, chunks content, stores vector embeddings in PostgreSQL, and streams grounded answers via Azure OpenAI. A React frontend provides Auth0-protected chat with real-time token streaming, markdown rendering, and source citations.
 
 ## What it does
 
@@ -10,7 +10,8 @@ A .NET pipeline for building a Q&A assistant over Microsoft Learn documentation.
 4. **Outputs** a JSON file of chunks with full metadata
 5. **Embeds** each chunk using Azure OpenAI (`text-embedding-3-small`), batching 100 chunks per API call
 6. **Stores** embeddings in PostgreSQL (pgvector) with idempotent upsert — safe to re-run
-7. **Answers** natural-language questions by embedding the query, retrieving the top-10 similar chunks (cosine similarity > 0.5), and streaming a response with `gpt-4o-mini` — available via REST API or interactive CLI
+7. **Answers** natural-language questions by embedding the query, retrieving the top-10 similar chunks (cosine similarity > 0.5), and streaming a response with `gpt-4o-mini`
+8. **Displays** responses in a React chat UI with Auth0 login, real-time token streaming, markdown rendering, and clickable source citations
 
 ## Architecture
 
@@ -25,12 +26,15 @@ A .NET pipeline for building a Q&A assistant over Microsoft Learn documentation.
 | `RagService` | `src/AskDotNet.Rag/Service/RagService.cs` | Embeds query, retrieves top-10 chunks by cosine similarity, generates answer via gpt-4o-mini |
 | `RagWorker` | `src/AskDotNet.RagCli/RagWorker.cs` | Interactive CLI loop; formats answers with source citations and similarity scores |
 | Web API | `src/AskDotNet.Web/Program.cs` | ASP.NET Core minimal API; `POST /api/chat` streams tokens via SSE with rate limiting (10 req/s) |
+| React frontend | `frontend/src/App.tsx` | Auth0-gated chat UI; parses SSE stream, renders markdown, displays source citations |
 
 ## Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
 - PostgreSQL ≥ 15 with the [pgvector extension](https://github.com/pgvector/pgvector)
 - Azure OpenAI resource with a `text-embedding-3-small` deployment and a `gpt-4o-mini` deployment
+- [Auth0](https://auth0.com) tenant with a Single Page Application and an API configured
+- [Node.js](https://nodejs.org) (for the React frontend)
 
 ## Database setup
 
@@ -63,11 +67,15 @@ dotnet run --project src/AskDotNet.Ingest
 dotnet run --project src/AskDotnet.Embed
 # → reads data/output.json, inserts chunks + embeddings into PostgreSQL
 
-# Phase 3a: Web API
+# Phase 3: Web API
 dotnet run --project src/AskDotNet.Web
 # → POST http://localhost:5253/api/chat  (streaming SSE)
 
-# Phase 3b: Interactive CLI (alternative)
+# Phase 4: React frontend
+cd frontend && npm install && npm run dev
+# → http://localhost:5173
+
+# Alternative: Interactive CLI (no frontend required)
 dotnet run --project src/AskDotNet.RagCli
 # → prompts for questions, prints answers with source citations
 ```
@@ -130,6 +138,20 @@ Additional settings in `src/AskDotNet.RagCli/appsettings.json`:
 | `AzureOpenAI:DeploymentName` | `text-embedding-3-small` | Embedding model deployment name |
 | `AzureOpenAI:ChatDeploymentName` | `gpt-4o-mini` | Answer generation model deployment name |
 
+**Frontend** — create `frontend/.env.local`:
+
+```bash
+VITE_AUTH0_DOMAIN=<your-auth0-tenant>.us.auth0.com
+VITE_AUTH0_CLIENT_ID=<your-spa-client-id>
+VITE_AUTH0_AUDIENCE=https://<your-api-identifier>
+VITE_API_URL=http://localhost:5253
+```
+
+Auth0 setup checklist:
+- Create a **Single Page Application** — note the Client ID
+- Add `http://localhost:5173` to Allowed Callback URLs, Logout URLs, and Web Origins
+- Create an **API** with identifier matching `VITE_AUTH0_AUDIENCE`; use the same value for `Auth0:Audience` in the backend secrets
+
 ## Output format
 
 Each entry in `output.json` is a `Chunk`:
@@ -183,3 +205,7 @@ Individual answer tokens are streamed as `data:` events. A final `event: sources
 | Npgsql + pgvector | PostgreSQL adapter with vector support |
 | ASP.NET Core (Minimal APIs) | REST API with SSE streaming and rate limiting |
 | Microsoft.AspNetCore.Authentication.JwtBearer | JWT auth (configured, disabled by default) |
+| React 19 + Vite + TypeScript | Frontend framework and build tooling |
+| @auth0/auth0-react | Auth0 authentication for the SPA |
+| react-markdown + rehype-highlight | Markdown rendering with syntax highlighting |
+| Tailwind CSS v4 | Utility-first styling |
