@@ -9,8 +9,6 @@ namespace AskDotNet.Ingest;
 public class Chunker(int maxToken = 800, int minTokens = 100)
 {
     private readonly TiktokenTokenizer _tokenizer = TiktokenTokenizer.CreateForModel("text-embedding-3-small");
-    private readonly int _maxTokens = maxToken;
-    private readonly int _minTokens = minTokens;
     private readonly MarkdownPipeline _pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
 
     private sealed record Section(string Heading, List<Block> Blocks);
@@ -63,7 +61,7 @@ public class Chunker(int maxToken = 800, int minTokens = 100)
         }
         
         var preambleBlocks = RenderBlocks(preamble);
-        if (CountTokens(preambleBlocks) >= _minTokens)
+        if (CountTokens(preambleBlocks) >= minTokens)
         {
             chunks.Add(CreateChunk(page, page.Title, preamble));
         }
@@ -73,7 +71,7 @@ public class Chunker(int maxToken = 800, int minTokens = 100)
             //render section blocks to string
             var sectionContent = RenderBlocks(section.Blocks);
             var sectionTokens = CountTokens(sectionContent);
-            if (sectionTokens <= _maxTokens)
+            if (sectionTokens <= maxToken)
             {
                 var chunk = CreateChunk(page, section.Heading, section.Blocks);
                 if (IsCleanContent(chunk.Content))
@@ -118,7 +116,7 @@ public class Chunker(int maxToken = 800, int minTokens = 100)
                 if (subBlocks.Count > 0)
                 {
                     var content = RenderBlocks(subBlocks);
-                    if (CountTokens(content) >= _minTokens)
+                    if (CountTokens(content) >= minTokens)
                     {
                         yield return CreateChunk(page, subHeading, subBlocks);
                     }
@@ -137,7 +135,7 @@ public class Chunker(int maxToken = 800, int minTokens = 100)
         if (subBlocks.Count > 0)
         {
             var content = RenderBlocks(subBlocks);
-            if (CountTokens(content) >= _minTokens)
+            if (CountTokens(content) >= minTokens)
             {
                 yield return CreateChunk(page, subHeading, subBlocks);
             }

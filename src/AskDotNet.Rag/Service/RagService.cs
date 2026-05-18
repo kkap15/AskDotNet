@@ -1,9 +1,9 @@
-using System.Text;
+using System.Runtime.CompilerServices;
 using AskDotNet.Core.Records;
+using AskDotNet.Rag.Helper;
 using AskDotNet.Rag.Interface;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
-using Npgsql;
 using Pgvector;
 
 namespace AskDotNet.Rag.Service;
@@ -12,8 +12,8 @@ public sealed class RagService : IRagService, IAsyncDisposable
 {
     private readonly IChatClient _chatClient;
     private readonly IEmbeddingGenerator<string, Embedding<float>> _generator;
-    private readonly NpgsqlDataSource _dataSource;
     private readonly ILogger<RagService> _logger;
+    private readonly DatabaseHelper _dbHelper;
 
     public RagService(IEmbeddingGenerator<string, Embedding<float>> generator, IChatClient chatClient,
         ILogger<RagService> logger, string connectionString)
@@ -21,7 +21,7 @@ public sealed class RagService : IRagService, IAsyncDisposable
         _generator = generator;
         _chatClient = chatClient;
         _logger = logger;
-        _dataSource = BuildDataSource(connectionString);
+        _dbHelper = new DatabaseHelper(connectionString);
     }
 
     public async Task<RagResponse> AskAsync(string question, CancellationToken ct = default)
@@ -30,7 +30,7 @@ public sealed class RagService : IRagService, IAsyncDisposable
         var questionEmbedding = await _generator.GenerateAsync(new[] { question }, cancellationToken: ct);
         var vector = new Pgvector.Vector(questionEmbedding[0].Vector.ToArray());
 
-        var chunks = (await RetrieveChunksAsync(vector, 10, ct))
+        var chunks = (await _dbHelper.RetrieveChunksAsync(vector, 10, ct))
             .Where(c => c.Similarity > 0.5)
             .ToList();
 
@@ -40,8 +40,8 @@ public sealed class RagService : IRagService, IAsyncDisposable
             return new RagResponse("I couldn't find any relevant information for your question.", []);
         }
 
-        var context = BuildContext(chunks);
-        var answer = await GenerateAnswerAsync(question, context, ct);
+        var context = RagHelper.BuildContext(chunks);
+        var answer = await RagHelper.GenerateAnswerAsync(question, context, _chatClient, ct);
         
         var sources = chunks
             .Select(c => new ChunkReference(c.SourceUrl, c.SourceTitle, c.SectionHeading, c.Similarity))
@@ -50,80 +50,40 @@ public sealed class RagService : IRagService, IAsyncDisposable
         return new RagResponse(answer, sources);
     }
 
-    private static NpgsqlDataSource BuildDataSource(string connectionString)
+    public async IAsyncEnumerable<string> AskStreamingAsync(string question,
+        Func<IReadOnlyList<ChunkReference>, Task> onSourceReady, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var builder = new NpgsqlDataSourceBuilder(connectionString);
-        builder.UseVector();
-        return builder.Build();
-    }
+        var questionEmbeddings = await _generator.GenerateAsync(new[] { question }, cancellationToken: cancellationToken);
+        var vector = new Vector(questionEmbeddings[0].Vector.ToArray());
+        var chunks = (await _dbHelper.RetrieveChunksAsync(vector, 10, cancellationToken))
+            .Where(c => c.Similarity > 0.5)
+            .ToList();
 
-    private async Task<List<(string SourceUrl, string SourceTitle, string SectionHeading, string Content, double
-            Similarity)>>
-        RetrieveChunksAsync(Vector queryVector, int topK, CancellationToken ct)
-    {
-        await using var connection = await _dataSource.OpenConnectionAsync(ct);
-        var query = @"
-SELECT source_url, source_title, section_heading, content, 1 - (embedding <=> @queryEmbedding) AS similarity
-FROM chunks
-ORDER BY embedding <=> @queryEmbedding
-LIMIT @topK";
-
-        await using var command = new NpgsqlCommand(query, connection);
-        command.Parameters.AddWithValue("queryEmbedding", queryVector);
-        command.Parameters.AddWithValue("topK", topK);
-        await using var reader = await command.ExecuteReaderAsync(ct);
-        var result =
-            new List<(string SourceUrl, string SourceTitle, string SectionHeading, string Content, double Similarity
-                )>();
-        while (await reader.ReadAsync(ct))
+        if (chunks.Count is 0)
         {
-            result.Add((reader.GetString(0), reader.GetString(1), reader.GetString(2), reader.GetString(3),
-                reader.GetDouble(4)));
+            await onSourceReady([]);
+            yield return "I couldn't find relevant information for your question.";
+            yield break;
         }
+        
+        var sources = chunks
+            .Select(c => new ChunkReference(c.SourceUrl, c.SourceTitle, c.SectionHeading, c.Similarity))
+            .ToList();
+        await onSourceReady(sources);
+        
+        var context = RagHelper.BuildContext(chunks);
+        var messages = RagHelper.BuildMessages(question, context);
 
-        return result;
-    }
-
-    private static string BuildContext(
-        List<(string SourceUrl, string SourceTitle, string SectionHeading, string Content, double Similarity)> chunks)
-    {
-        var builder = new StringBuilder();
-        for (var i = 0; i < chunks.Count; i++)
+        await foreach (var update in _chatClient.GetStreamingResponseAsync(messages,
+                           cancellationToken: cancellationToken))
         {
-            var c = chunks[i];
-            builder.AppendLine($"[{i + 1}] {c.SourceTitle} - {c.SectionHeading}");
-            builder.AppendLine($"Source: {c.SourceUrl}");
-            builder.AppendLine(c.Content);
-            builder.AppendLine();
+            var text = update.Text;
+            if (text is not null)
+            {
+                yield return text;
+            }
         }
-        return builder.ToString();
     }
-
-    private async Task<string> GenerateAnswerAsync(string question, string context, CancellationToken ct)
-    {
-        var systemPrompt = """
-                           You are a helpful C# documentation assistant. Answer the questions based ONLY on the provided documentation excerpts.
-                           If the answer is not in the provided excerpts, say "I don't have enough information to answer that."
-                           Always be concise and accurate. Reference specific sections when relevant.
-                           """;
-
-        var userPrompt = $"""
-                          Documentation excerpts:
-                          {context}
-
-                          Question: {question}
-                          """;
-
-        var messages = new List<ChatMessage>
-        {
-            new(ChatRole.System, systemPrompt),
-            new(ChatRole.User, userPrompt)
-        };
-
-        var response = await _chatClient.GetResponseAsync(messages, null, ct);
-
-        return response.Text;
-    }
-
-public async ValueTask DisposeAsync() => await _dataSource.DisposeAsync();
+    
+    public async ValueTask DisposeAsync() => await _dbHelper.DisposeAsync();
 }
