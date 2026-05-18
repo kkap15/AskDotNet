@@ -1,13 +1,13 @@
 <Solution>
-  <Folder Name="/src/">
+  <Folder Name="/backend.tests/">
+    <Project Path="tests/AskDotNet.Ingest.Tests/AskDotNet.Ingest.Tests.csproj" />
+  </Folder>
+  <Folder Name="/backend/">
     <Project Path="src/AskDotNet.Core/AskDotNet.Core.csproj" />
     <Project Path="src/AskDotNet.Embed/AskDotNet.Embed.csproj" />
     <Project Path="src/AskDotNet.Ingest/AskDotNet.Ingest.csproj" />
     <Project Path="src/AskDotNet.Rag/AskDotNet.Rag.csproj" />
     <Project Path="src/AskDotNet.RagCli/AskDotNet.RagCli.csproj" />
     <Project Path="src/AskDotNet.Web/AskDotNet.Web.csproj" />
-  </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/AskDotNet.Ingest.Tests/AskDotNet.Ingest.Tests.csproj" />
   </Folder>
 </Solution>
