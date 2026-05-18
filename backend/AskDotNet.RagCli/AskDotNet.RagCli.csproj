@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <UserSecretsId>c464bb47-a823-41c2-96d3-ccb143b636ba</UserSecretsId>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\AskDotNet.Core\AskDotNet.Core.csproj" />
+      <ProjectReference Include="..\AskDotNet.Embed\AskDotNet.Embed.csproj" />
+      <ProjectReference Include="..\AskDotNet.Rag\AskDotNet.Rag.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Azure.AI.OpenAI" Version="2.1.0" />
+      <PackageReference Include="Microsoft.Extensions.AI" Version="10.6.0" />
+      <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="10.6.0" />
+      <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.8" />
+      <PackageReference Include="Npgsql" Version="10.0.2" />
+      <PackageReference Include="Pgvector" Version="0.3.2" />
+    </ItemGroup>
+
+</Project>
