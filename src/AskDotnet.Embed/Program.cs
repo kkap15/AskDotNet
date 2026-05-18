@@ -21,19 +21,13 @@ await Host.CreateDefaultBuilder(args)
     {
         var cfg = ctx.Configuration;
 
-        services.AddSingleton<IDatabaseService>(_ =>
-        {
-            return new DatabaseService(cfg["Postgres:ConnectionString"]
-                                ?? throw new InvalidOperationException("Postgres:ConnectionString is not set"));
-        });
-        services.AddSingleton<IEmbeddingService>(_ =>
-        {
-            return new EmbeddingService(
-                cfg["AzureOpenAI:Endpoint"] ?? throw new InvalidOperationException("AzureOpenAI:Endpoint is not set"),
-                cfg["AzureOpenAI:ApiKey"] ?? throw new InvalidOperationException("AzureOpenAI:ApiKey is not set"),
-                cfg["AzureOpenAI:DeploymentName"] ??
-                throw new InvalidOperationException("AzureOpenAI:DeploymentName is not set"));
-        });
+        services.AddSingleton<IDatabaseService>(_ => new DatabaseService(cfg["Postgres:ConnectionString"]
+                                                                         ?? throw new InvalidOperationException("Postgres:ConnectionString is not set")));
+        services.AddSingleton<IEmbeddingService>(_ => new EmbeddingService(
+            cfg["AzureOpenAI:Endpoint"] ?? throw new InvalidOperationException("AzureOpenAI:Endpoint is not set"),
+            cfg["AzureOpenAI:ApiKey"] ?? throw new InvalidOperationException("AzureOpenAI:ApiKey is not set"),
+            cfg["AzureOpenAI:DeploymentName"] ??
+            throw new InvalidOperationException("AzureOpenAI:DeploymentName is not set")));
 
         services.AddHostedService<EmbedWorker>();
     })
