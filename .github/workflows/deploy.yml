@@ -53,3 +53,8 @@ jobs:
             --name $CONTAINER_APP \
             --resource-group $RESOURCE_GROUP \
             --image $ACR_REGISTRY/$IMAGE_NAME:${{ github.sha }} \
+            
+      - name: Cleanup old Vercel deployments
+        run: |
+          npm install -g vercel
+          vercel remove askdotnet --safe -yes token ${{ secrets.VERCEL_TOKEN }}
