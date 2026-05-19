@@ -23,10 +23,10 @@ jobs:
           dotnet-version: '10.0.x'
       
       - name: Build
-        run: dotnet build backend/AskDotNet.sln --configuration Release
+        run: dotnet build AskDotNet.sln --configuration Release
         
       - name: Test
-        run: dotnet test backend/AskDotNet.sln --configuration Release --no-build
+        run: dotnet test AskDotNet.sln --configuration Release --no-build
         
       - name: Azure Login
         uses: azure/login@v2
