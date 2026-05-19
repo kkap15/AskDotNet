@@ -37,7 +37,7 @@ export default function App() {
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
       `}</style>
 
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#0a0a0a', color: '#e5e5e5' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden', background: '#0a0a0a', color: '#e5e5e5' }}>
         <Header />
 
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '32px 24px' }}>

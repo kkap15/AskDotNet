@@ -11,9 +11,15 @@ body {
   -webkit-text-size-adjust: none;
 }
 
+html, body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 #root {
-  width: 100%;
-  height: 100vh;
+  height: 100%;
+  overflow: hidden;
   padding-top: env(safe-area-insert-top);
   padding-bottom: env(safe-area-insert-bottom);
 }
