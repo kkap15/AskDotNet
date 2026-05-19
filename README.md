@@ -55,7 +55,7 @@ Microsoft Learn C# Docs
 
 | Layer | Technology |
 |-------|------------|
-| Frontend | React 19, Vite, TypeScript, Tailwind CSS |
+| Frontend | React 19, Vite, TypeScript, Tailwind CSS, PWA (installable) |
 | Backend | ASP.NET Core 10, Minimal APIs, SSE streaming |
 | AI | Azure OpenAI (text-embedding-3-small, gpt-4o-mini) |
 | Vector DB | PostgreSQL + pgvector (HNSW, cosine similarity) |
@@ -147,6 +147,7 @@ Single endpoint: `POST /api/chat`
 - `fetch` + `ReadableStream` SSE consumer (EventSource doesn't support POST)
 - `ReactMarkdown` for formatted answers with code blocks
 - Clickable citation sources with similarity scores
+- PWA manifest + icons — installable on iOS and Android via "Add to Home Screen"
 
 ---
 
@@ -250,6 +251,19 @@ Sources:
   [70%] C# structs > C# structs
         https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/structs
 ```
+
+---
+
+## CI / CD
+
+Pushes to `main` trigger `.github/workflows/deploy.yml`, which:
+
+1. **Builds and tests** the .NET solution (`dotnet build` + `dotnet test`)
+2. **Builds a Docker image** for `AskDotNet.Web` and pushes it to Azure Container Registry (`askdotnetacr.azurecr.io`)
+3. **Deploys the API** to Azure Container Apps (`askdotnet-web` in `askdotnet-rg`) via `az containerapp update`
+4. **Deploys the frontend** to Vercel (`vercel --prod`) using `vercel.json` — build runs `cd frontend && npm run build`, output from `frontend/dist`
+
+Required GitHub secrets: `AZURE_CREDENTIALS`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`.
 
 ---
 
