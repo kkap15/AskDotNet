@@ -1,0 +1,32 @@
+[
+  {
+    "question": "What is a struct in C#",
+    "expectedSourceUrl": "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/structs",
+    "expectedFact": "A struct is a value type that holds its data directly in the instance"
+  },
+  {
+    "question": "What does the field keyword do in C#",
+    "expectedSourceUrl": "https://learn.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-14",
+    "expectedFact": "the field keyword allows property accessors without an explicit backing field"
+  },
+  {
+    "question": "What is an enum in C#",
+    "expectedSourceUrl": "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/enum",
+    "expectedFact": "An enumeration type (or enum type) is a value type defined by a set of named constants of the underlying integral numeric type."
+  },
+  {
+    "question": "What is a lambda expression in C#",
+    "expectedSourceUrl": "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/operators/lambda-expressions",
+    "expectedFact": "A lambda expression with an expression on the right side of the => operator is called an expression lambda."
+  },
+  {
+    "question": "What is a nullable value type in C#",
+    "expectedSourceUrl": "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/nullable-value-types",
+    "expectedFact": "A nullable value type is a value type that can hold a null value."
+  },
+  {
+    "question": "What is a generic type in C#",
+    "expectedSourceUrl": "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/generics",
+    "expectedFact": "A generic type is a type parameter that is constrained to a specific type or set of types."
+  }
+]

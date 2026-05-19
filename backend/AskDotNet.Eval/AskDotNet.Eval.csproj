@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <UserSecretsId>ebedc28f-1531-48d4-a5a1-7d85b6784588</UserSecretsId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Azure.AI.OpenAI" Version="2.1.0" />
+        <PackageReference Include="Microsoft.Extensions.AI" Version="10.6.0" />
+        <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="10.6.0" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.8" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.8" />
+        <PackageReference Include="Npgsql" Version="10.0.2" />
+        <PackageReference Include="Pgvector" Version="0.3.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\AskDotNet.Core\AskDotNet.Core.csproj" />
+      <ProjectReference Include="..\AskDotNet.Rag\AskDotNet.Rag.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="appsettings.json" />
+      <Content Include="appsettings.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+</Project>

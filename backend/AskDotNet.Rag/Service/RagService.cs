@@ -27,12 +27,7 @@ public sealed class RagService : IRagService, IAsyncDisposable
     public async Task<RagResponse> AskAsync(string question, CancellationToken ct = default)
     {
         _logger.LogInformation("Processing question: {Question}", question);
-        var questionEmbedding = await _generator.GenerateAsync(new[] { question }, cancellationToken: ct);
-        var vector = new Pgvector.Vector(questionEmbedding[0].Vector.ToArray());
-
-        var chunks = (await _dbHelper.RetrieveChunksAsync(vector, 10, ct))
-            .Where(c => c.Similarity > 0.5)
-            .ToList();
+        var (chunks, source) = await PrepareAsync(question, 10, true, ct);
 
         if (chunks.Count == 0)
         {
@@ -51,9 +46,10 @@ public sealed class RagService : IRagService, IAsyncDisposable
     }
 
     public async IAsyncEnumerable<string> AskStreamingAsync(string question,
-        Func<IReadOnlyList<ChunkReference>, Task> onSourceReady, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        Func<IReadOnlyList<ChunkReference>, Task> onSourceReady,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var (chunks, sources) = await PrepareAsync(question, cancellationToken);
+        var (chunks, sources) = await PrepareAsync(question, 10, true, cancellationToken);
 
         if (chunks.Count is 0)
         {
@@ -67,7 +63,7 @@ public sealed class RagService : IRagService, IAsyncDisposable
         var context = RagHelper.BuildContext(chunks);
         var messages = RagHelper.BuildMessages(question, context);
 
-        await foreach (var update in _chatClient.GetStreamingResponseAsync(messages,
+        await foreach (var update in _chatClient.GetStreamingResponseAsync(messages, 
                            cancellationToken: cancellationToken))
         {
             var text = update.Text;
@@ -78,20 +74,32 @@ public sealed class RagService : IRagService, IAsyncDisposable
         }
     }
 
-    private async Task<(List<(string SourceUrl, string SourceTitle, string SectionHeading, string Content, 
-            double Similarity)> Chunks, List<ChunkReference> Sources)> PrepareAsync(string question, CancellationToken ct)
+    public async Task<IReadOnlyList<ChunkReference>> RetrieveAsync(string question, int topK,
+        CancellationToken cancellationToken = default)
     {
-        var questionEmbeddings = await _generator.GenerateAsync(new List<string> { question });
+        var (_, sources) = await PrepareAsync(question, topK, false, cancellationToken);
+
+        return sources;
+    }
+
+    private async Task<(List<(string SourceUrl, string SourceTitle, string SectionHeading, string Content, 
+            double Similarity)> Chunks, List<ChunkReference> Sources)> PrepareAsync(string question, int topK, bool applyThreshold, CancellationToken ct)
+    {
+        var questionEmbeddings = await _generator.GenerateAsync(new List<string> { question }, cancellationToken: ct);
         var vector = new Vector(questionEmbeddings[0].Vector.ToArray());
-        var chunks = (await _dbHelper.RetrieveChunksAsync(vector, 10, ct))
-            .Where(c => c.Similarity > 0.5)
-            .ToList();
+        var chunks = await _dbHelper.RetrieveChunksAsync(vector, topK, ct);
+        
+        if (applyThreshold)
+        {
+            chunks = chunks.Where(c => c.Similarity > 0.5).ToList();
+        }
+        
         var sources = chunks
             .Select(c => new ChunkReference(c.SourceUrl, c.SourceTitle, c.SectionHeading, c.Similarity))
             .ToList();
         
         return (chunks, sources);
     }
-    
+
     public async ValueTask DisposeAsync() => await _dbHelper.DisposeAsync();
 }

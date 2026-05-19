@@ -48,6 +48,8 @@ string[] seedUrls =
     "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/enum",
     "https://learn.microsoft.com/en-us/dotnet/csharp/linq/get-started/type-relationships-in-linq-query-operations",
     "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/structs",
+    "https://learn.microsoft.com/en-us/dotnet/csharp/linq/get-started/write-linq-queries",
+    "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/operators/lambda-expressions"
 ];
 
 var pages = await crawler.CrawlAsync(seedUrls, cts.Token);

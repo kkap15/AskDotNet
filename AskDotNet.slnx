@@ -5,6 +5,7 @@
   <Folder Name="/backend/">
     <Project Path="backend/AskDotNet.Core/AskDotNet.Core.csproj" />
     <Project Path="backend/AskDotNet.Embed/AskDotNet.Embed.csproj" />
+    <Project Path="backend/AskDotNet.Eval/AskDotNet.Eval.csproj" />
     <Project Path="backend/AskDotNet.Ingest/AskDotNet.Ingest.csproj" />
     <Project Path="backend/AskDotNet.Rag/AskDotNet.Rag.csproj" />
     <Project Path="backend/AskDotNet.RagCli/AskDotNet.RagCli.csproj" />
