@@ -7,9 +7,13 @@
 body {
   margin: 0;
   padding: 0;
+  touch-action: pan-y;
+  -webkit-text-size-adjust: none;
 }
 
 #root {
   width: 100%;
   height: 100vh;
+  padding-top: env(safe-area-insert-top);
+  padding-bottom: env(safe-area-insert-bottom);
 }

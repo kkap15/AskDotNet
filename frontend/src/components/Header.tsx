@@ -40,7 +40,7 @@ export function Header() {
             
             {isAuthenticated && user && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{ fontSize: '13px', color: '#737373' }}>{user.email}</span>
+                    <span style={{ fontSize: '13px', color: '#737373', display: 'none' }}>{user.email}</span>
                     <button
                         onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
                         style={{
