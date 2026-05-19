@@ -6,7 +6,7 @@ using Microsoft.ML.Tokenizers;
 
 namespace AskDotNet.Ingest;
 
-public class Chunker(int maxToken = 800, int minTokens = 100)
+public class Chunker(int maxTokens = 800, int minTokens = 100)
 {
     private readonly TiktokenTokenizer _tokenizer = TiktokenTokenizer.CreateForModel("text-embedding-3-small");
     private readonly MarkdownPipeline _pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
@@ -71,7 +71,7 @@ public class Chunker(int maxToken = 800, int minTokens = 100)
             //render section blocks to string
             var sectionContent = RenderBlocks(section.Blocks);
             var sectionTokens = CountTokens(sectionContent);
-            if (sectionTokens <= maxToken)
+            if (sectionTokens <= maxTokens)
             {
                 var chunk = CreateChunk(page, section.Heading, section.Blocks);
                 if (IsCleanContent(chunk.Content))
