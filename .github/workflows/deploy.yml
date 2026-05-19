@@ -49,8 +49,7 @@ jobs:
           
       - name: Deploy to Container App
         run: |
-          az container app create \
+          az containerapp update \
             --name $CONTAINER_APP \
             --resource-group $RESOURCE_GROUP \
             --image $ACR_REGISTRY/$IMAGE_NAME:${{ github.sha }} \
-            --environment-variables ASPNETCORE_ENVIRONMENT=Production
