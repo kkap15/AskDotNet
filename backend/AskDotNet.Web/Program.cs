@@ -61,7 +61,9 @@ public class Program
         {
             options.AddPolicy("frontend", policy =>
                 {
-                    policy.WithOrigins("http://localhost:5173")
+                    policy.WithOrigins("http://localhost:5173",
+                            "https://askdotnet.vercel.app",
+                            "https://askdotnet.moviegasm.xyz")
                         .AllowAnyMethod()
                         .AllowAnyHeader()
                         .AllowCredentials();

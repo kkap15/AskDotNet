@@ -5,6 +5,7 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UserSecretsId>edde7684-9725-4abb-84d9-af8131f3061f</UserSecretsId>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
 
     <ItemGroup>
@@ -21,6 +22,12 @@
     <ItemGroup>
       <ProjectReference Include="..\AskDotNet.Core\AskDotNet.Core.csproj" />
       <ProjectReference Include="..\AskDotNet.Rag\AskDotNet.Rag.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
     </ItemGroup>
 
 </Project>
