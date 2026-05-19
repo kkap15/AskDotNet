@@ -12,6 +12,7 @@ A full-stack Q&A assistant over Microsoft Learn documentation. A .NET backend cr
 6. **Stores** embeddings in PostgreSQL (pgvector) with idempotent upsert — safe to re-run
 7. **Answers** natural-language questions by embedding the query, retrieving the top-10 similar chunks (cosine similarity > 0.5), and streaming a response with `gpt-4o-mini`
 8. **Displays** responses in a React chat UI with Auth0 login, real-time token streaming, markdown rendering, and clickable source citations
+9. **Evaluates** answer quality against a golden set — retrieval recall, groundedness, and LLM-as-judge scores written to a Markdown report
 
 ## Architecture
 
@@ -27,6 +28,8 @@ A full-stack Q&A assistant over Microsoft Learn documentation. A .NET backend cr
 | `RagWorker` | `backend/AskDotNet.RagCli/RagWorker.cs` | Interactive CLI loop; formats answers with source citations and similarity scores |
 | Web API | `backend/AskDotNet.Web/Program.cs` | ASP.NET Core minimal API; `POST /api/chat` streams tokens via SSE with rate limiting (10 req/s) |
 | React frontend | `frontend/src/App.tsx` | Auth0-gated chat UI; parses SSE stream, renders markdown, displays source citations |
+| `EvalWorker` | `backend/AskDotNet.Eval/EvalWorker.cs` | Runs a golden-set evaluation: retrieval recall, LLM-as-judge scoring, outputs a Markdown report |
+| `EvalHelper` | `backend/AskDotNet.Eval/Helpers/EvalHelper.cs` | Judge prompt, JSON score parsing, report generation |
 
 ## Prerequisites
 
@@ -78,6 +81,10 @@ cd frontend && npm install && npm run dev
 # Alternative: Interactive CLI (no frontend required)
 dotnet run --project backend/AskDotNet.RagCli
 # → prompts for questions, prints answers with source citations
+
+# Evaluation (optional)
+dotnet run --project backend/AskDotNet.Eval
+# → reads data/golden-set.json, writes data/eval-report.md
 ```
 
 ## Configuration
@@ -138,6 +145,24 @@ Additional settings in `backend/AskDotNet.RagCli/appsettings.json`:
 | `AzureOpenAI:DeploymentName` | `text-embedding-3-small` | Embedding model deployment name |
 | `AzureOpenAI:ChatDeploymentName` | `gpt-4o-mini` | Answer generation model deployment name |
 
+**Eval** — set user secrets from the `backend/AskDotNet.Eval` directory:
+
+```bash
+dotnet user-secrets set "AzureOpenAI:Endpoint" "https://<your-resource>.openai.azure.com/"
+dotnet user-secrets set "AzureOpenAI:ApiKey" "<your-key>"
+dotnet user-secrets set "Postgres:ConnectionString" "Host=localhost;Database=askdotnet;Username=...;Password=..."
+```
+
+Additional settings in `backend/AskDotNet.Eval/appsettings.json`:
+
+| Key | Default | Description |
+|---|---|---|
+| `AzureOpenAI:DeploymentName` | `text-embedding-3-small` | Embedding model deployment name |
+| `AzureOpenAI:ChatDeploymentName` | `gpt-4o-mini` | Judge model deployment name |
+| `Eval:GoldenSetPath` | `../../../../../data/golden-set.json` | Path to golden set |
+| `Eval:ReportPath` | `../../../../../data/eval-report.md` | Path for output report |
+| `Eval:TopK` | `10` | Chunks retrieved per question |
+
 **Frontend** — create `frontend/.env.local`:
 
 ```bash
@@ -188,6 +213,19 @@ data: [{"sourceUrl":"https://learn.microsoft.com/...","sourceTitle":"...","secti
 ```
 
 Individual answer tokens are streamed as `data:` events. A final `event: sources` event delivers the cited chunks with similarity scores.
+
+## Evaluation
+
+Measured over 6 questions against the ingested .NET/C# documentation (2026-05-19):
+
+| Metric | Value |
+|--------|-------|
+| Retrieval Recall@K | 83% |
+| Average answer score | 3.0 / 5 |
+| Grounded | 67% |
+| Addresses question | 67% |
+
+Two failures (`field` keyword, lambda expressions) were retrieval misses — the relevant pages weren't in the crawl corpus. Adding those seed URLs should close the gap.
 
 ## Tech stack
 
