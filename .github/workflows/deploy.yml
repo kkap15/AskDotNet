@@ -1,0 +1,56 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+    
+env: 
+  ACR_REGISTRY: askdotnetacr.azurecr.io
+  IMAGE_NAME: askdotnet-web
+  CONTAINER_APP: askdotnet-web
+  RESOURCE_GROUP: askdotnet-rg
+  
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: action/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      
+      - name: Build
+        run: dotnet build backend/askdotnet.sln --configuration Release
+        
+      - name: Test
+        run: dotnet test backend/askdotnet.sln --configuration Release --no-build
+        
+      - name: Azure Login
+        uses: azure/login@v2
+        with: 
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: ACR Login
+        run: az acr login --name askdotnetacr
+        
+      - name: Build and Push Docker Image
+        run: |
+          docker build \
+            --platform linux/amd64 \
+            -f backend/AskDotNet.Web/Dockerfile \
+            -t $ACR_REGISTRY/$IMAGE_NAME:${{ github.sha }} \
+            -t $ACR_REGISTRY/$IMAGE_NAME:latest \
+            .
+          docker push $ACR_REGISTRY/$IMAGE_NAME:${{ github.sha }}
+          docker push $ACR_REGISTRY/$IMAGE_NAME:latest
+          
+      - name: Deploy to Container App
+        run: |
+          az container app create \
+            --name $CONTAINER_APP \
+            --resource-group $RESOURCE_GROUP \
+            --image $ACR_REGISTRY/$IMAGE_NAME:${{ github.sha }} \
+            --environment-variables ASPNETCORE_ENVIRONMENT=Production
