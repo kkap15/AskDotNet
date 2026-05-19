@@ -57,4 +57,4 @@ jobs:
       - name: Cleanup old Vercel deployments
         run: |
           npm install -g vercel
-          vercel remove askdotnet --safe -yes token ${{ secrets.VERCEL_TOKEN }}
+          vercel remove askdotnet --safe -yes --token ${{ secrets.VERCEL_TOKEN }}
