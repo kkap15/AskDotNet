@@ -2,3 +2,9 @@ data/chunks.json
 bin/
 obj/
 frontend/node_modules
+*.DS_STORE
+data
+.idea
+.claude
+AskDotNet.sln.Dot*
+.idea/.idea.AskDotNet/.idea
