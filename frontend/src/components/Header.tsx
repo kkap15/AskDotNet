@@ -17,8 +17,10 @@ export function Header() {
             top: 0,
             zIndex: 10,
             flexShrink: 0,
+            width: '100%',
+            boxSizing: 'border-box'
         }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{maxWidth: '680px', margin: '0 auto', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{
                     width: '22px', height: '22px',
                     background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
@@ -40,10 +42,11 @@ export function Header() {
             
             {isAuthenticated && user && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{ fontSize: '13px', color: '#737373', display: 'none' }}>{user.email}</span>
+                    <span className="header-email" style={{ fontSize: '13px', color: '#737373' }}>{user.email}</span>
                     <button
                         onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
                         style={{
+                            whiteSpace: 'nowrap',
                             fontSize: '12px', color: '#737373', background: 'none',
                             border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px',
                             padding: '4px 10px', cursor: 'pointer',

@@ -5,15 +5,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { streamChat } from "../services/chatApi";
 
 export function useChat() {
-    const [messages, setMessages] = useState<Message[]>([
-        {
-            id: crypto.randomUUID(),
-            role: 'assistant',
-            content: 'Hi! Ask me anything about C#.',
-            status: 'complete',
-            timestamp: new Date()
-        },
-    ]);
+    const [messages, setMessages] = useState<Message[]>([]);
     const [sources, setSources] = useState<ChunkReference[]>([]);
     const [currentInput, setCurrentInput] = useState('');
     const endRef = useRef<HTMLDivElement>(null);

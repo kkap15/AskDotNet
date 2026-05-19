@@ -37,11 +37,40 @@ export default function App() {
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
       `}</style>
 
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden', background: '#0a0a0a', color: '#e5e5e5' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', paddingTop: 'env(safe-area-inset-top)', paddingBottom:'env(safe-area-inset-bottom)', overflow: 'hidden', background: '#0a0a0a', color: '#e5e5e5' }}>
         <Header />
 
-        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '32px 24px' }}>
-          <div style={{ maxWidth: '680px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 16px', WebkitOverflowScrolling: 'touch' }}>
+          <div style={{ maxWidth: '680px', margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '4px', minHeight: '100%' }}>
+            {                                   }
+            {messages.length === 0 && (
+              <div style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '12px',
+                padding: '40px 0',
+              }}>
+              <div style={{
+                  width: '48px', height: '48px',
+                  background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                  borderRadius: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '22px',
+              }}>
+                  ✦
+              </div>
+                <p style={{ color: '#737373', fontSize: '15px', margin: 0 }}>
+                  Hi! Ask me anything about C#.
+                </p>
+              </div>
+            )}
+            
+            {                 }
             {messages.map((message) => (
               <div key={message.id} className="message-enter">
                 <MessageBubble message={message} />

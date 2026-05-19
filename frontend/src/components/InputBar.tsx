@@ -14,6 +14,7 @@ export function InputBar({ currentInput, setCurrentInput, isThinking, handleSubm
     <div style={{
       borderTop: '1px solid rgba(255,255,255,0.06)',
       padding: '16px 24px 20px',
+      paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
       background: 'rgba(10,10,10,0.8)',
       backdropFilter: 'blur(12px)',
       flexShrink: 0,

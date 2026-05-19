@@ -3,5 +3,11 @@
     "outputDirectory": "frontend/dist",
     "installCommand": "cd frontend && npm install",
     "framework": "vite",
-    "regions": ["syd1"]
+    "regions": ["syd1"],
+    "rewrites": [
+        {
+            "source": "/(.*)",
+            "destination": "/index.html"
+        }
+    ]
 }
