@@ -1,9 +1,11 @@
 using AskDotNet.Core.Records;
+using AskDotNet.Ingest.Interface;
+using AskDotNet.Ingest.Utilities;
 using Microsoft.Extensions.Logging;
 
-namespace AskDotNet.Ingest;
+namespace AskDotNet.Ingest.Service;
 
-public sealed class Crawler(HttpClient client, ContentExtractor extractor, ILogger<Crawler> logger)
+public sealed class Crawler(HttpClient client, ContentExtractor extractor, ILogger<Crawler> logger) : ICrawler
 {
     public async Task<IReadOnlyList<Page>> CrawlAsync(IEnumerable<string> urls, CancellationToken cancellationToken = default)
     {

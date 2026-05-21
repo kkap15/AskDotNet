@@ -1,10 +1,12 @@
 using AngleSharp;
 using AngleSharp.Html.Parser;
 using AskDotNet.Core.Records;
+using AskDotNet.Ingest.Helpers;
+using AskDotNet.Ingest.Interface;
 
-namespace AskDotNet.Ingest;
+namespace AskDotNet.Ingest.Utilities;
 
-public sealed class ContentExtractor
+public sealed class ContentExtractor : IContentExtractor
 {
     private readonly ReverseMarkdown.Converter _converter = new();
     private readonly IHtmlParser _parser = new HtmlParser(new HtmlParserOptions(), BrowsingContext.New());
@@ -22,7 +24,7 @@ public sealed class ContentExtractor
             "local-time",
         };
         var angleSharpDocument = await _parser.ParseDocumentAsync(html);
-        var headingPath = ExtractHeadingPathFromUrl(url);
+        var headingPath = ContentExtractorHelper.ExtractHeadingPathFromUrl(url);
         
         var debugBreadcrumb = angleSharpDocument
             .QuerySelector("#article-header-breadcrumbs-overflow-popover");
@@ -53,8 +55,8 @@ public sealed class ContentExtractor
                 element.Remove();
             }
         }
-
-        var titleElement = article.QuerySelector("h1");
+        
+        _ = article.QuerySelector("h1");
         var title = angleSharpDocument
             .QuerySelector("[data-main-column] div.content h1")?.TextContent.Trim() ?? string.Empty;
 
@@ -63,36 +65,5 @@ public sealed class ContentExtractor
         var markdown = _converter.Convert(htmlContent);
 
         return new Page(url, title, markdown, headingPath, DateTimeOffset.UtcNow);
-    }
-
-    private static IReadOnlyList<string> ExtractHeadingPathFromUrl(string url)
-    {
-        // Maps known path segments to display names
-        var segmentNames = new Dictionary<string, string>
-        {
-            ["dotnet"] = ".NET",
-            ["csharp"] = "C#",
-            ["fundamentals"] = "Fundamentals",
-            ["language-reference"] = "Language Reference",
-            ["types"] = "Types",
-            ["statements"] = "Statements",
-            ["operators"] = "Operators",
-            ["keywords"] = "Keywords",
-            ["builtin-types"] = "Built-in Types",
-            ["program-structure"] = "Program Structure",
-        };
-
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
-        {
-            return Array.Empty<string>();
-        }
-
-        return uri.Segments
-            .Select(s => s.Trim('/'))
-            .Where(s => !string.IsNullOrWhiteSpace(s)
-                        && s != "en-us"
-                        && s != "learn.microsoft.com")
-            .Select(s => segmentNames.TryGetValue(s, out var name) ? name : s)
-            .ToList();
     }
 }

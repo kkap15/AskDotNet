@@ -1,4 +1,5 @@
 ﻿using AskDotNet.Core.Records;
+using AskDotNet.Ingest.Utilities;
 using FluentAssertions;
 
 namespace AskDotNet.Ingest.Tests;

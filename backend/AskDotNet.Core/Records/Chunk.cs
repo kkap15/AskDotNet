@@ -1,3 +1,5 @@
+using Markdig.Syntax;
+
 namespace AskDotNet.Core.Records;
 
 /// <summary>
@@ -16,3 +18,5 @@ public sealed record Chunk(
     string Content,
     int TokenCount
 );
+
+public sealed record Section(string Heading, List<Block> Blocks);
