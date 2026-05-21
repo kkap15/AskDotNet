@@ -44,18 +44,23 @@ public class Program
             });
         builder.Services.AddRateLimiter(options =>
         {
-            options.AddPolicy<string>("chat", context =>
-                RateLimitPartition.GetTokenBucketLimiter(
-                    partitionKey: context.User.Identity?.Name
-                                  ?? context.Connection.RemoteIpAddress?.ToString()
-                                  ?? "anonymous",
-                    factory: _ => new TokenBucketRateLimiterOptions
-                    {
-                        TokenLimit = 10,
-                        ReplenishmentPeriod = TimeSpan.FromSeconds(1),
-                        TokensPerPeriod = 10,
-                        AutoReplenishment = true
-                    }));
+            options.AddPolicy<string>("adaptive", context =>
+            {
+                var isAuthenticated = context.User.Identity?.IsAuthenticated == true;
+                var key = isAuthenticated
+                    ? $"auth:{context.User.Identity!.Name}"
+                    : $"guest:{context.Connection.RemoteIpAddress}";
+
+                return RateLimitPartition.GetTokenBucketLimiter(key, _ => new TokenBucketRateLimiterOptions
+                {
+                    TokenLimit = isAuthenticated ? 10 : 3,
+                    ReplenishmentPeriod = isAuthenticated
+                        ? TimeSpan.FromMinutes(1)
+                        : TimeSpan.FromHours(1),
+                    TokensPerPeriod = isAuthenticated ? 10 : 3,
+                    AutoReplenishment = true
+                });
+            });
         });
         builder.Services.AddCors(options =>
         {
@@ -105,16 +110,15 @@ public class Program
                                        },
                                        ct))
                     {
-                        await context.Response.WriteAsync($"data: {token}\n\n");
-                        await context.Response.Body.FlushAsync();
+                        await context.Response.WriteAsync($"data: {token}\n\n", ct);
+                        await context.Response.Body.FlushAsync(ct);
                     }
 
                     var sourcesJson = JsonSerializer.Serialize(sources);
-                    await context.Response.WriteAsync($"event: sources\ndata: {sourcesJson}\n\n");
-                    await context.Response.Body.FlushAsync();
+                    await context.Response.WriteAsync($"event: sources\ndata: {sourcesJson}\n\n", ct);
+                    await context.Response.Body.FlushAsync(ct);
                 })
-            .RequireAuthorization()
-            .RequireRateLimiting("chat");
+            .RequireRateLimiting("adaptive");
         app.Run();
     }
 }
