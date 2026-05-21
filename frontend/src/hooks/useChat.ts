@@ -5,17 +5,24 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { streamChat } from "../services/chatApi";
 
 export function useChat() {
+    const GUEST_LIMIT = 3;
+    const [guestQuestionCount, setGuestQuestionCount] = useState(0);
     const [messages, setMessages] = useState<Message[]>([]);
     const [sources, setSources] = useState<ChunkReference[]>([]);
     const [currentInput, setCurrentInput] = useState('');
     const endRef = useRef<HTMLDivElement>(null);
-    const { getAccessTokenSilently } = useAuth0();
+    const { isAuthenticated, getAccessTokenSilently, loginWithRedirect } = useAuth0();
     
     const isThinking = messages.some(m => m.status === 'thinking');
     
     const handleSubmit = async () => {
         setSources([]);
         if (!currentInput.trim() || isThinking) return;
+        
+        if (!isAuthenticated && guestQuestionCount >= GUEST_LIMIT) {
+            loginWithRedirect();
+            return;
+        }
         
         const newMessage: Message = {
             id: crypto.randomUUID(),
@@ -39,21 +46,27 @@ export function useChat() {
         setCurrentInput('');
         
         try {
-            const token = await getAccessTokenSilently({
-                authorizationParams: { audience: import.meta.env.VITE_AUTH0_AUDIENCE },
-            });
+            const token = isAuthenticated 
+                ? await getAccessTokenSilently({
+                    authorizationParams: { audience: import.meta.env.VITE_AUTH0_AUDIENCE },
+                })
+                : null;
             
             await streamChat(userContent, token, (event) => {
-                if (event.type === 'sources') {
-                    setSources(event.value);
-                } else if (event.type === 'token') {
+                if (event.type === 'token') {
                     setMessages(prev => prev.map(msg => 
                         msg.id === placeholderId
                             ? {...msg, content: msg.content + event.value, status: 'thinking' }
                             : msg
                     ));
+                } else if (event.type === 'sources') {
+                    setSources(event.value);
                 }
             });
+            
+            if (!isAuthenticated) {
+                setGuestQuestionCount(prev => prev + 1);
+            }
             
             setMessages(prev => prev.map(msg => 
                 msg.id === placeholderId
@@ -76,6 +89,8 @@ export function useChat() {
         setCurrentInput,
         isThinking,
         endRef,
-        handleSubmit
+        handleSubmit,
+        guestQuestionCount,
+        guestLimit: GUEST_LIMIT
     }
 }

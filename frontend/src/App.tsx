@@ -6,7 +6,7 @@ import { InputBar } from './components/InputBar';
 import { useChat } from './hooks/useChat';
 
 export default function App() {
-  const { messages, sources, currentInput, setCurrentInput, isThinking, endRef, handleSubmit } = useChat();
+  const { messages, sources, currentInput, setCurrentInput, isThinking, endRef, handleSubmit, guestQuestionCount, guestLimit } = useChat();
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -86,6 +86,8 @@ export default function App() {
           setCurrentInput={setCurrentInput}
           isThinking={isThinking}
           handleSubmit={handleSubmit}
+          guestQuestionCount={guestQuestionCount}
+          guestLimit={guestLimit}
         />
       </div>
     </>

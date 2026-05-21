@@ -2,15 +2,18 @@ import { parseSseLines, type SseEvent } from "../utils/sseParser";
 
 export async function streamChat(
     question: string,
-    token: string,
+    token: string | null,
     onEvent: (event: SseEvent) => void
 ): Promise<void> {
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+    };
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
     const response = await fetch(`${import.meta.env.VITE_API_URL}/api/chat`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-        },
+        headers: headers,
         body: JSON.stringify({ question })
     });
     
