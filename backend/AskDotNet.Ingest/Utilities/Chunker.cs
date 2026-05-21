@@ -1,6 +1,7 @@
 using AskDotNet.Core.Records;
 using AskDotNet.Ingest.Helpers;
 using AskDotNet.Ingest.Interface;
+using AskDotNet.Ingest.Record;
 using Markdig;
 using Markdig.Syntax;
 

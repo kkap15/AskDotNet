@@ -1,15 +1,16 @@
 using AskDotNet.Core.Records;
+using AskDotNet.Ingest.Record;
 using Markdig.Renderers.Normalize;
 using Markdig.Syntax;
 using Microsoft.ML.Tokenizers;
 
 namespace AskDotNet.Ingest.Helpers;
 
-public static class ChunkerHelper
+internal static class ChunkerHelper
 {
-    private static readonly TiktokenTokenizer Tokenizer = TiktokenTokenizer.CreateForModel("text-embedding-3-small");   
+    private static readonly TiktokenTokenizer Tokenizer = TiktokenTokenizer.CreateForModel("text-embedding-3-small"); 
     
-    public static IEnumerable<Chunk> SplitAtH3(Page page, Section section, int minTokens)
+    internal static IEnumerable<Chunk> SplitAtH3(Page page, Section section, int minTokens)
     {
         var subHeading = section.Heading;
         var subBlocks = new List<Block>();
@@ -47,7 +48,7 @@ public static class ChunkerHelper
         }
     }
     
-    public static Chunk CreateChunk(Page page, string sectionHeading, IEnumerable<Block> blocks)
+    internal static Chunk CreateChunk(Page page, string sectionHeading, IEnumerable<Block> blocks)
     {
         var content = RenderBlocks(blocks);
         return new Chunk(
@@ -61,7 +62,7 @@ public static class ChunkerHelper
         );
     }
     
-    public static string RenderBlocks(IEnumerable<Block> blocks)
+    internal static string RenderBlocks(IEnumerable<Block> blocks)
     {
         var writer = new StringWriter();
         var renderer = new NormalizeRenderer(writer);
@@ -73,10 +74,10 @@ public static class ChunkerHelper
         return writer.ToString().Trim();
     }
     
-    public static bool IsCleanContent(string content)
+    internal static bool IsCleanContent(string content)
     {
         return !content.Contains('<') && !content.Contains('>');
     }
     
-    public static int CountTokens(string text) => Tokenizer.CountTokens(text);
+    internal static int CountTokens(string text) => Tokenizer.CountTokens(text);
 }
