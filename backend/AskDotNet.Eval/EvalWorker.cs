@@ -33,10 +33,12 @@ public sealed class EvalWorker(IRagService ragService,
 
     private async Task RunEvalAsync(CancellationToken stoppingToken)
     {
-        var goldenSetPath = configuration["Eval:GoldenSetPath"] 
-            ?? throw new InvalidOperationException("Eval:GoldenSetPath is not set");
-        var reportPath = configuration["Eval:ReportPath"] 
-            ?? throw new InvalidOperationException("Eval:ReportPath is not set");
+        var goldenSetPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, configuration["Eval:GoldenSetPath"]!)) 
+                            ?? throw new InvalidOperationException("Could not find golden set path");
+        var reportPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, configuration["Eval:ReportPath"]!)) 
+                         ?? throw new InvalidOperationException("Eval:ReportPath is not set");
+        var rawPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, configuration["Eval:RawReportPath"]!))
+                            ?? throw new InvalidOperationException("Eval:RawReportPath is not set");
         var topK = int.Parse(configuration["Eval:TopK"] ?? "5");
         
         var json = await File.ReadAllTextAsync(goldenSetPath, stoppingToken);
@@ -60,9 +62,12 @@ public sealed class EvalWorker(IRagService ragService,
             
             var ragResponse = await ragService.AskAsync(entry.Question, stoppingToken);
 
-            var judgeResult = await EvalHelper.JudgeAsync(entry.Question, entry.ExpectedFact, ragResponse.Answer, retrievedSources,
+            var judgeResult = await EvalHelper.JudgeAsync(entry.Question, entry.ExpectedFact, ragResponse.Answer,
+                retrievedSources,
                 chatClient, stoppingToken);
-
+            var context = string.Join("\n\n", retrievedSources.Select(s =>
+                $"[{s.SourceTitle} > {s.SectionHeading}]\n{s.SourceUrl}"));
+            
             if (judgeResult.Reasoning.Contains("Parse failed:"))
             {
                 logger.LogWarning("Failed to parse judge response: {Response}", judgeResult.Reasoning);
@@ -76,13 +81,17 @@ public sealed class EvalWorker(IRagService ragService,
                 AddressesQuestion: judgeResult.AddressesQuestion,
                 Score: judgeResult.Score,
                 Answer: ragResponse.Answer,
-                JudgeReason: judgeResult.Reasoning));
+                JudgeReason: judgeResult.Reasoning,
+                RetrievedContext: context));
             
             logger.LogInformation("Result:  RetrievalHit={Hit}, Score={Score}/5", retrievalHit, judgeResult.Score);
         }
         
         var report = EvalHelper.GenerateReport(results);
+        var rawJson = JsonSerializer.Serialize(results, new JsonSerializerOptions {  WriteIndented = true });
+        await File.WriteAllTextAsync(rawPath, rawJson, stoppingToken);
         await File.WriteAllTextAsync(reportPath, report, stoppingToken);
         logger.LogInformation("Report saved to {Path}", reportPath);
+        logger.LogInformation("Raw report saved to {Path}", rawPath);
     }
 }

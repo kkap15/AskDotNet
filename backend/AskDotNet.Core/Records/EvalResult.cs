@@ -8,5 +8,6 @@ public sealed record EvalResult(
     bool AddressesQuestion,
     int Score,
     string Answer,
-    string JudgeReason
+    string JudgeReason,
+    string RetrievedContext
 );

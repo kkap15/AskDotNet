@@ -10,9 +10,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 await Host.CreateDefaultBuilder(args)
-    .ConfigureAppConfiguration((_, config) =>
+    .ConfigureAppConfiguration((context, config) =>
     {
-        config.AddJsonFile("appsettings.json");
+        config.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "appsettings.json"), false);
         config.AddUserSecrets<Program>();
     })
     .ConfigureLogging(logging =>
