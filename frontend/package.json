@@ -12,6 +12,7 @@
   "dependencies": {
     "@auth0/auth0-react": "^2.16.2",
     "@tailwindcss/vite": "^4.3.0",
+    "canvas": "^3.2.3",
     "highlight.js": "^11.11.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
